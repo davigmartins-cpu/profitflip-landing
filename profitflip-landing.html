@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ProfitFlip — Know If a Deal Makes Money Before You Buy</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #08090c;
+  --surface: #0f1116;
+  --surface2: #141720;
+  --border: #1a1f2e;
+  --border2: #222840;
+  --orange: #ff5c1a;
+  --orange2: #ff3d00;
+  --yellow: #ffd044;
+  --green: #00e87a;
+  --red: #ff3d3d;
+  --blue: #4d9fff;
+  --text: #eceef5;
+  --muted: #525c7a;
+  --dim: #252d45;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Barlow', sans-serif;
+  overflow-x: hidden;
+}
+
+/* GRAIN OVERLAY */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ===== NAV ===== */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 48px;
+  background: rgba(8,9,12,0.85);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, var(--orange), var(--orange2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.nav-cta {
+  background: linear-gradient(135deg, var(--orange), var(--orange2));
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 10px 24px;
+  border-radius: 4px;
+  text-decoration: none;
+  transition: opacity 0.2s, transform 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.nav-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+/* ===== HERO ===== */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px 24px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* HERO BACKGROUND GRID */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.3;
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 50%, black 40%, transparent 100%);
+}
+
+/* GLOW */
+.hero-glow {
+  position: absolute;
+  width: 700px;
+  height: 700px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ff5c1a18 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.hero-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--orange);
+  margin-bottom: 24px;
+  opacity: 0;
+  animation: fadeUp 0.6s ease 0.1s forwards;
+}
+
+.hero-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(60px, 10vw, 120px);
+  line-height: 0.92;
+  letter-spacing: 2px;
+  margin-bottom: 28px;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 0.25s forwards;
+}
+
+.hero-headline .line1 { display: block; color: var(--text); }
+.hero-headline .line2 {
+  display: block;
+  background: linear-gradient(135deg, var(--orange) 0%, var(--yellow) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-sub {
+  font-size: clamp(16px, 2.5vw, 20px);
+  color: var(--muted);
+  max-width: 560px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 0.4s forwards;
+}
+
+.hero-sub strong { color: var(--text); }
+
+.hero-anti {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 40px;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 0.5s forwards;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hero-anti::before, .hero-anti::after {
+  content: '';
+  width: 40px;
+  height: 1px;
+  background: var(--border2);
+}
+
+.hero-cta-group {
+  display: flex;
+  gap: 14px;
+  justify-content: center;
+  flex-wrap: wrap;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 0.6s forwards;
+  margin-bottom: 56px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--orange), var(--orange2));
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 16px 40px;
+  border-radius: 4px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 8px 32px #ff5c1a30;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 40px #ff5c1a45;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--muted);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 16px 28px;
+  border-radius: 4px;
+  text-decoration: none;
+  border: 1px solid var(--border2);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-secondary:hover { border-color: var(--muted); color: var(--text); }
+
+/* HERO STATS */
+.hero-stats {
+  display: flex;
+  gap: 48px;
+  justify-content: center;
+  flex-wrap: wrap;
+  opacity: 0;
+  animation: fadeUp 0.7s ease 0.75s forwards;
+}
+
+.hero-stat { text-align: center; }
+
+.hero-stat-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  letter-spacing: 1px;
+  line-height: 1;
+  color: var(--orange);
+  margin-bottom: 4px;
+}
+
+.hero-stat-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ===== PAIN SECTION ===== */
+.pain {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 80px 24px;
+  text-align: center;
+}
+
+.pain-inner { max-width: 800px; margin: 0 auto; }
+
+.section-eyebrow {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 20px;
+}
+
+.pain-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 6vw, 64px);
+  line-height: 0.95;
+  letter-spacing: 1px;
+  margin-bottom: 28px;
+  color: var(--text);
+}
+
+.pain-headline .hl { color: var(--red); }
+
+.pain-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+  margin-top: 40px;
+  text-align: left;
+}
+
+.pain-item {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.pain-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+.pain-text {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.pain-text strong { color: var(--text); display: block; margin-bottom: 3px; font-size: 14px; }
+
+/* ===== FEATURES ===== */
+.features {
+  padding: 100px 24px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.features-header {
+  text-align: center;
+  margin-bottom: 64px;
+}
+
+.features-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(40px, 6vw, 72px);
+  letter-spacing: 1px;
+  line-height: 0.95;
+  margin-bottom: 16px;
+}
+
+.features-headline .hl { color: var(--orange); }
+
+.features-sub {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 480px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.feature-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px;
+  transition: border-color 0.2s, transform 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.feature-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--orange), var(--orange2));
+  transform: scaleX(0);
+  transition: transform 0.3s;
+  transform-origin: left;
+}
+
+.feature-card:hover {
+  border-color: var(--border2);
+  transform: translateY(-3px);
+}
+
+.feature-card:hover::before { transform: scaleX(1); }
+
+.feature-card.featured {
+  border-color: #ff5c1a40;
+  background: linear-gradient(135deg, #ff5c1a0a, var(--surface));
+}
+
+.feature-card.featured::before { transform: scaleX(1); }
+
+.feature-badge {
+  display: inline-block;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--orange);
+  background: #ff5c1a15;
+  border: 1px solid #ff5c1a30;
+  padding: 3px 8px;
+  border-radius: 3px;
+  margin-bottom: 14px;
+}
+
+.feature-icon { font-size: 28px; margin-bottom: 14px; display: block; }
+
+.feature-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.feature-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.feature-desc strong { color: var(--text); }
+
+/* ===== HOW IT WORKS ===== */
+.how {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 100px 24px;
+  text-align: center;
+}
+
+.how-inner { max-width: 900px; margin: 0 auto; }
+
+.how-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(40px, 6vw, 68px);
+  letter-spacing: 1px;
+  line-height: 0.95;
+  margin-bottom: 60px;
+}
+
+.how-headline .hl { color: var(--green); }
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0;
+  position: relative;
+}
+
+.steps::before {
+  content: '';
+  position: absolute;
+  top: 32px;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border2), var(--border2), transparent);
+}
+
+.step {
+  padding: 0 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.step-num {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--surface2);
+  border: 2px solid var(--border2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  color: var(--orange);
+  margin: 0 auto 20px;
+}
+
+.step-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  color: var(--text);
+}
+
+.step-desc {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* ===== WHAT'S INSIDE ===== */
+.inside {
+  padding: 100px 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.inside-header {
+  text-align: center;
+  margin-bottom: 56px;
+}
+
+.inside-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(40px, 6vw, 68px);
+  letter-spacing: 1px;
+  line-height: 0.95;
+  margin-bottom: 12px;
+}
+
+.inside-headline .hl { color: var(--yellow); }
+
+.checklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 10px;
+}
+
+.check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  transition: border-color 0.2s;
+}
+
+.check-item:hover { border-color: var(--border2); }
+
+.check-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--green-dim, #00e87a18);
+  border: 1px solid #00e87a40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-top: 1px;
+  font-size: 10px;
+}
+
+.check-text { font-size: 13px; color: var(--text); line-height: 1.5; }
+.check-text span { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ===== VS SECTION ===== */
+.vs {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 80px 24px;
+}
+
+.vs-inner { max-width: 800px; margin: 0 auto; text-align: center; }
+
+.vs-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 5vw, 60px);
+  letter-spacing: 1px;
+  line-height: 0.95;
+  margin-bottom: 48px;
+}
+
+.vs-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.vs-table th {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border2);
+  color: var(--muted);
+}
+
+.vs-table th:nth-child(2) { text-align: center; color: var(--muted); }
+.vs-table th:nth-child(3) { text-align: center; color: var(--orange); }
+
+.vs-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.vs-table td:nth-child(2), .vs-table td:nth-child(3) { text-align: center; font-size: 16px; }
+
+.vs-table tr:hover td { background: var(--surface2); }
+
+/* ===== TESTIMONIALS ===== */
+.testimonials {
+  padding: 100px 24px;
+  max-width: 1000px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.test-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 5vw, 60px);
+  letter-spacing: 1px;
+  line-height: 0.95;
+  margin-bottom: 48px;
+}
+
+.test-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.test-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px;
+  text-align: left;
+}
+
+.test-stars {
+  color: var(--yellow);
+  font-size: 14px;
+  margin-bottom: 14px;
+  letter-spacing: 2px;
+}
+
+.test-quote {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.7;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+.test-author {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.test-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 16px;
+  color: var(--orange);
+  flex-shrink: 0;
+}
+
+.test-name { font-size: 13px; font-weight: 600; color: var(--text); }
+.test-role { font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+
+/* ===== PRICING ===== */
+.pricing {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 100px 24px;
+  text-align: center;
+}
+
+.pricing-inner { max-width: 520px; margin: 0 auto; }
+
+.pricing-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(40px, 6vw, 72px);
+  letter-spacing: 1px;
+  line-height: 0.95;
+  margin-bottom: 8px;
+}
+
+.pricing-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 40px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 1px;
+}
+
+.price-card {
+  background: var(--bg);
+  border: 1px solid #ff5c1a50;
+  border-radius: 14px;
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.price-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--orange), var(--yellow));
+}
+
+.price-tag {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 80px;
+  letter-spacing: 2px;
+  line-height: 1;
+  color: var(--orange);
+  margin-bottom: 4px;
+}
+
+.price-tag sup {
+  font-size: 32px;
+  vertical-align: top;
+  margin-top: 12px;
+  display: inline-block;
+}
+
+.price-once {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 32px;
+}
+
+.price-features {
+  list-style: none;
+  margin-bottom: 36px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.price-features li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.price-features li::before {
+  content: '✓';
+  color: var(--green);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.btn-buy {
+  display: block;
+  width: 100%;
+  background: linear-gradient(135deg, var(--orange), var(--orange2));
+  color: #fff;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  padding: 18px;
+  border-radius: 6px;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 8px 40px #ff5c1a35;
+  margin-bottom: 14px;
+}
+
+.btn-buy:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 48px #ff5c1a50;
+}
+
+.price-note {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.5px;
+}
+
+/* ===== FAQ ===== */
+.faq {
+  padding: 80px 24px;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.faq-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(36px, 5vw, 56px);
+  letter-spacing: 1px;
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 0;
+}
+
+.faq-q {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+
+.faq-q span { font-size: 18px; color: var(--orange); flex-shrink: 0; transition: transform 0.2s; }
+.faq-q.open span { transform: rotate(45deg); }
+
+.faq-a {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.8;
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, padding-top 0.2s;
+}
+
+.faq-a.open { max-height: 300px; padding-top: 14px; }
+
+/* ===== FINAL CTA ===== */
+.final-cta {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 100px 24px;
+  text-align: center;
+}
+
+.final-headline {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(48px, 8vw, 96px);
+  letter-spacing: 2px;
+  line-height: 0.9;
+  margin-bottom: 24px;
+}
+
+.final-headline .line1 { display: block; color: var(--text); }
+.final-headline .line2 {
+  display: block;
+  background: linear-gradient(135deg, var(--orange), var(--yellow));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.final-sub {
+  font-size: 16px;
+  color: var(--muted);
+  max-width: 440px;
+  margin: 0 auto 40px;
+  line-height: 1.6;
+}
+
+/* ===== FOOTER ===== */
+footer {
+  padding: 28px 48px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.footer-logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, var(--orange), var(--orange2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.footer-note {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 768px) {
+  nav { padding: 14px 20px; }
+  .steps::before { display: none; }
+  .steps { grid-template-columns: 1fr; gap: 32px; }
+  footer { flex-direction: column; text-align: center; padding: 24px; }
+  .hero-stats { gap: 28px; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">ProfitFlip</div>
+  <a href="https://davigmartin.gumroad.com/l/profitflip-deal-analyzer" target="_blank" class="nav-cta">Get It on Etsy →</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-eyebrow">Fix & Flip Deal Analyzer — Built for Serious Investors</div>
+  <h1 class="hero-headline">
+    <span class="line1">Stop Guessing.</span>
+    <span class="line2">Start Profiting.</span>
+  </h1>
+  <p class="hero-sub">
+    <strong>Know in 60 seconds</strong> whether a fix & flip deal makes money —
+    before you make an offer, before you commit, before you lose your shirt.
+  </p>
+  <div class="hero-anti">No spreadsheets. No subscriptions. No BS.</div>
+  <div class="hero-cta-group">
+    <a href="https://davigmartin.gumroad.com/l/profitflip-deal-analyzer" target="_blank" class="btn-primary">🔥 Get ProfitFlip on Etsy</a>
+    <a href="#features" class="btn-secondary">See What's Inside</a>
+  </div>
+  <div class="hero-stats">
+    <div class="hero-stat">
+      <div class="hero-stat-val">60s</div>
+      <div class="hero-stat-label">To analyze any deal</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">9+</div>
+      <div class="hero-stat-label">Calculators in one</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">0</div>
+      <div class="hero-stat-label">Monthly fees. Ever.</div>
+    </div>
+    <div class="hero-stat">
+      <div class="hero-stat-val">∞</div>
+      <div class="hero-stat-label">Deals you can analyze</div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section class="pain">
+  <div class="pain-inner reveal">
+    <div class="section-eyebrow">Sound familiar?</div>
+    <h2 class="pain-headline">
+      Most Flippers <span class="hl">Bleed Money</span><br>Because They Don't Run the Numbers
+    </h2>
+    <p style="font-size:15px;color:var(--muted);max-width:520px;margin:0 auto;line-height:1.7;">
+      The market is tighter. Margins are thinner. One bad deal can wipe out three good ones.
+      You can't afford to guess anymore.
+    </p>
+    <div class="pain-list">
+      <div class="pain-item">
+        <div class="pain-icon">📊</div>
+        <div class="pain-text">
+          <strong>Drowning in spreadsheets</strong>
+          You've got 6 tabs open, 3 formulas broken, and still no clear answer.
+        </div>
+      </div>
+      <div class="pain-item">
+        <div class="pain-icon">⏱️</div>
+        <div class="pain-text">
+          <strong>Holding costs eating your profit</strong>
+          Every day you own that property costs real money. Most investors don't track it daily.
+        </div>
+      </div>
+      <div class="pain-item">
+        <div class="pain-icon">🎲</div>
+        <div class="pain-text">
+          <strong>No backup plan</strong>
+          What if it doesn't sell? Do you know if it works as a rental? Most don't.
+        </div>
+      </div>
+      <div class="pain-item">
+        <div class="pain-icon">😰</div>
+        <div class="pain-text">
+          <strong>Paralysis by analysis</strong>
+          You know you need the numbers but building it from scratch takes hours you don't have.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="features-header reveal">
+    <div class="section-eyebrow">What ProfitFlip Does</div>
+    <h2 class="features-headline">Every Number You Need.<br><span class="hl">Nothing You Don't.</span></h2>
+    <p class="features-sub">Built by investors who got tired of tools that were either too simple or too complicated.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card featured reveal">
+      <div class="feature-badge">⭐ Most Wanted</div>
+      <span class="feature-icon">🚦</span>
+      <div class="feature-title">Instant Go / No-Go Verdict</div>
+      <div class="feature-desc">Enter your numbers. ProfitFlip tells you <strong>immediately</strong> — green light, yellow flag, or hard stop. No interpretation needed.</div>
+    </div>
+    <div class="feature-card reveal">
+      <span class="feature-icon">📅</span>
+      <div class="feature-title">Holding Cost Clock</div>
+      <div class="feature-desc">See exactly <strong>how much each day of delay costs you</strong> — per day, per week, per extra month. Delays kill margins. Now you'll see it in real time.</div>
+    </div>
+    <div class="feature-card reveal">
+      <span class="feature-icon">🐻🐂</span>
+      <div class="feature-title">3-Scenario Stress Test</div>
+      <div class="feature-desc">Bear, Base, Bull. See your profit if ARV comes in <strong>8% low</strong> and rehab runs <strong>20% over</strong>. Know your worst case before you commit.</div>
+    </div>
+    <div class="feature-card reveal">
+      <span class="feature-icon">🚪</span>
+      <div class="feature-title">Dual Exit Strategy</div>
+      <div class="feature-desc">Plan A: sell it. Plan B: hold it as a rental. ProfitFlip calculates <strong>Cap Rate, Cash Flow, CoC Return and DSCR</strong> for your fallback automatically.</div>
+    </div>
+    <div class="feature-card reveal">
+      <span class="feature-icon">📐</span>
+      <div class="feature-title">Dynamic 70% Rule</div>
+      <div class="feature-desc">Not all markets are equal. Switch between <strong>65%, 70%, 75% and 80%</strong> multipliers based on your local market. The old fixed rule is dead.</div>
+    </div>
+    <div class="feature-card reveal">
+      <span class="feature-icon">💰</span>
+      <div class="feature-title">MAO Calculator</div>
+      <div class="feature-desc">Know the <strong>Maximum Allowable Offer</strong> instantly. See if your current purchase price is above or below the limit — color coded, no math required.</div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="how-inner reveal">
+    <div class="section-eyebrow">Simple as it gets</div>
+    <h2 class="how-headline">Analyze Any Deal in <span class="hl">3 Steps</span></h2>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-title">Enter Your Numbers</div>
+        <div class="step-desc">Purchase price, ARV, rehab budget, financing terms and holding costs. Takes under 2 minutes.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-title">Review the Analysis</div>
+        <div class="step-desc">Instant verdict, profit, ROI, MAO, scenarios and exit strategy comparison — all calculated automatically.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-title">Make Your Move</div>
+        <div class="step-desc">Pull the trigger with confidence, negotiate harder, or walk away. The numbers never lie.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- WHAT'S INSIDE -->
+<section class="inside">
+  <div class="inside-header reveal">
+    <div class="section-eyebrow">Full feature list</div>
+    <h2 class="inside-headline">Everything Inside <span class="hl">ProfitFlip</span></h2>
+  </div>
+  <div class="checklist reveal">
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">Net Profit & ROI Calculator<span>Cash-on-cash and annualized return</span></div></div>
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">MAO — Maximum Allowable Offer<span>Dynamic rule with market multiplier</span></div></div>
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">Holding Cost Clock<span>Per day, per week, per extra month</span></div></div>
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">Bear / Base / Bull Scenarios<span>Stress test before you commit</span></div></div>
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">Dual Exit Strategy (Flip vs. Rent)<span>Cap Rate, NOI, CoC Return, DSCR</span></div></div>
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">Hard Money & Conventional Financing<span>Points, interest rate, LTV</span></div></div>
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">Auto Contingency Buffer (5–25%)<span>Never get blindsided by cost overruns</span></div></div>
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">Cost Breakdown Visualization<span>See where every dollar goes</span></div></div>
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">Instant Go / No-Go Verdict<span>No interpretation needed</span></div></div>
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">Breakeven Price Calculator<span>Minimum ARV to not lose money</span></div></div>
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">Works on Desktop & Mobile<span>Browser-based, nothing to install</span></div></div>
+    <div class="check-item"><div class="check-icon">✓</div><div class="check-text">One-Time Purchase, Use Forever<span>No subscriptions. No logins. Yours forever.</span></div></div>
+  </div>
+</section>
+
+<!-- VS TABLE -->
+<section class="vs">
+  <div class="vs-inner reveal">
+    <div class="section-eyebrow">Comparison</div>
+    <h2 class="vs-headline">ProfitFlip vs. Everything Else</h2>
+    <table class="vs-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Generic Calculators</th>
+          <th>ProfitFlip</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Go / No-Go Verdict</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Holding Cost per Day</td><td>❌</td><td>✅</td></tr>
+        <tr><td>3-Scenario Stress Test</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Dual Exit Strategy</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Dynamic 70% Rule</td><td>❌</td><td>✅</td></tr>
+        <tr><td>Hard Money Financing</td><td>Rarely</td><td>✅</td></tr>
+        <tr><td>Monthly Subscription</td><td>$14–49/mo</td><td>❌ One-time</td></tr>
+        <tr><td>Works offline / no login</td><td>❌</td><td>✅</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <h2 class="test-headline reveal">What Flippers Are Saying</h2>
+  <div class="test-grid">
+    <div class="test-card reveal">
+      <div class="test-stars">★★★★★</div>
+      <div class="test-quote">"I walked away from two deals last month because of the stress test feature. Both would have lost me money. This tool paid for itself before I even closed a deal."</div>
+      <div class="test-author">
+        <div class="test-avatar">M</div>
+        <div><div class="test-name">Marcus T.</div><div class="test-role">Flipper · Ohio</div></div>
+      </div>
+    </div>
+    <div class="test-card reveal">
+      <div class="test-stars">★★★★★</div>
+      <div class="test-quote">"The holding cost clock alone is worth it. I never thought about how much a 2-week delay was actually costing me until I saw it in real numbers."</div>
+      <div class="test-author">
+        <div class="test-avatar">S</div>
+        <div><div class="test-name">Sarah K.</div><div class="test-role">Investor · Texas</div></div>
+      </div>
+    </div>
+    <div class="test-card reveal">
+      <div class="test-stars">★★★★★</div>
+      <div class="test-quote">"Finally something that shows me Plan B automatically. I've held 3 properties as rentals after flips didn't sell — now I model it from day one."</div>
+      <div class="test-author">
+        <div class="test-avatar">D</div>
+        <div><div class="test-name">Derek M.</div><div class="test-role">Buy & Hold · Florida</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="pricing">
+  <div class="pricing-inner reveal">
+    <div class="section-eyebrow">One-time investment</div>
+    <h2 class="pricing-headline">One Deal Pays<br>For This Forever</h2>
+    <p class="pricing-sub">No subscriptions. No logins. No BS.</p>
+    <div class="price-card">
+      <div class="price-tag"><sup>$</sup>29</div>
+      <div class="price-once">One-time · Instant Download</div>
+      <ul class="price-features">
+        <li>Full ProfitFlip Deal Analyzer</li>
+        <li>All 9+ calculators included</li>
+        <li>Works on any browser, no install</li>
+        <li>Unlimited deals analyzed</li>
+        <li>Free updates forever</li>
+        <li>Works offline after download</li>
+      </ul>
+      <a href="https://davigmartin.gumroad.com/l/profitflip-deal-analyzer" target="_blank" class="btn-buy">🔥 Get It on Etsy — $29</a>
+      <div class="price-note">⚡ Instant delivery · 5-star rated · Used by 500+ investors</div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <h2 class="faq-headline reveal">Common Questions</h2>
+
+  <div class="faq-item reveal">
+    <div class="faq-q" onclick="toggleFaq(this)">Do I need Excel or any software? <span>+</span></div>
+    <div class="faq-a">Nope. ProfitFlip runs entirely in your browser — Chrome, Safari, Edge, any of them. No install, no account, no Excel needed. Open the file and start analyzing.</div>
+  </div>
+
+  <div class="faq-item reveal">
+    <div class="faq-q" onclick="toggleFaq(this)">Is this a subscription? <span>+</span></div>
+    <div class="faq-a">Absolutely not. You pay once, you own it forever. No monthly fees, no renewal, no login. It's a file you download and keep.</div>
+  </div>
+
+  <div class="faq-item reveal">
+    <div class="faq-q" onclick="toggleFaq(this)">I'm a beginner — is this too advanced for me? <span>+</span></div>
+    <div class="faq-a">Not at all. If you can enter a purchase price and ARV, you can use ProfitFlip. Every input has a label and hint. The verdict tells you immediately if the deal works or not — no finance degree required.</div>
+  </div>
+
+  <div class="faq-item reveal">
+    <div class="faq-q" onclick="toggleFaq(this)">What's the difference between this and free online calculators? <span>+</span></div>
+    <div class="faq-a">Free calculators give you one number. ProfitFlip gives you the full picture — stress tests, exit strategy B, holding cost per day, dynamic MAO, and an instant verdict. Free tools don't tell you what happens if your rehab runs 20% over. ProfitFlip does.</div>
+  </div>
+
+  <div class="faq-item reveal">
+    <div class="faq-q" onclick="toggleFaq(this)">Can I use it for rental properties too? <span>+</span></div>
+    <div class="faq-a">Yes. The dual exit strategy feature calculates Cap Rate, Cash-on-Cash Return, NOI, and DSCR for any property if you decide to hold instead of flip. It's designed for flippers who want to know their backup plan.</div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final-cta">
+  <h2 class="final-headline reveal">
+    <span class="line1">The Best Deals Go</span>
+    <span class="line2">To The Fastest Analysts.</span>
+  </h2>
+  <p class="final-sub reveal">
+    In today's market, hesitation costs money. Know your numbers in 60 seconds.
+    Pull the trigger on the right deals. Walk away from the wrong ones.
+  </p>
+  <a href="https://davigmartin.gumroad.com/l/profitflip-deal-analyzer" target="_blank" class="btn-primary reveal">🔥 Get ProfitFlip on Etsy — $29</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo">ProfitFlip</div>
+  <div class="footer-note">For informational purposes only. Not financial advice. Always verify comps and consult professionals.</div>
+</footer>
+
+<script>
+// FAQ toggle
+function toggleFaq(el) {
+  const answer = el.nextElementSibling;
+  const isOpen = answer.classList.contains('open');
+  document.querySelectorAll('.faq-a.open').forEach(a => { a.classList.remove('open'); a.previousElementSibling.classList.remove('open'); });
+  if (!isOpen) { answer.classList.add('open'); el.classList.add('open'); }
+}
+
+// Scroll reveal
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((entry, i) => {
+    if (entry.isIntersecting) {
+      setTimeout(() => entry.target.classList.add('visible'), 80);
+      observer.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
